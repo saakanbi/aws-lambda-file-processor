@@ -9,9 +9,10 @@ resource "random_id" "suffix" {
 
 # 1. S3 Bucket
 resource "aws_s3_bucket" "upload_bucket" {
-  bucket = "project-upload-bucket-${var.env}"
+  bucket        = "project-upload-bucket-dev-saakanbi"
   force_destroy = true
 }
+
 
 # 2. IAM Role for Lambda
 resource "aws_iam_role" "lambda_exec_role" {
