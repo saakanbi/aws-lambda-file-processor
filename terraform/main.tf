@@ -11,10 +11,13 @@ resource "random_id" "suffix" {
 resource "aws_s3_bucket" "upload_bucket" {
   bucket        = "project-upload-bucket-dev-saakanbi"
   force_destroy = true
+
   lifecycle {
     prevent_destroy = true
+    ignore_changes  = [bucket]
   }
 }
+
 
 
 # 2. IAM Role for Lambda
