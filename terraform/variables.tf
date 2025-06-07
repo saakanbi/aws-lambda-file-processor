@@ -11,3 +11,13 @@ variable "lambda_function_name" {
 variable "env" {
   default = "dev"
 }
+
+variable "environment" {
+  type    = string
+  default = "dev"
+}
+
+variable "environment" {
+  type    = string
+  default = "dev"
+}

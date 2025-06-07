@@ -5,16 +5,20 @@ provider "aws" {
 # 0. Random suffix for unique S3 bucket
 resource "random_id" "suffix" {
   byte_length = 4
+  keepers = {
+    # This value will only change when explicitly modified
+    bucket_name = "project-upload-bucket-dev"
+  }
 }
 
 # 1. S3 Bucket
 resource "aws_s3_bucket" "upload_bucket" {
-  bucket        = "project-upload-bucket-dev-saakanbi"
+  bucket        = "project-upload-bucket-dev-${random_id.suffix.hex}"
   force_destroy = true
 
   lifecycle {
-    prevent_destroy = true
-    ignore_changes  = [bucket]
+    prevent_destroy = false
+    ignore_changes  = [tags]
   }
 }
 
@@ -113,4 +117,70 @@ resource "aws_apigatewayv2_stage" "default" {
   auto_deploy = true
 }
 
+# 7. CloudWatch Monitoring
+
+## 7a. SNS Topic for Alarms
+resource "aws_sns_topic" "lambda_alarms" {
+  name = "lambda-alarms-${var.environment}"
+}
+
+## 7b. CloudWatch Dashboard
+resource "aws_cloudwatch_dashboard" "lambda_dashboard" {
+  dashboard_name = "lambda-dashboard-${var.environment}"
+  dashboard_body = jsonencode({
+    widgets = [
+      {
+        type   = "metric"
+        x      = 0
+        y      = 0
+        width  = 12
+        height = 6
+        properties = {
+          metrics = [
+            ["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.file_processor.function_name],
+            ["AWS/Lambda", "Errors", "FunctionName", aws_lambda_function.file_processor.function_name],
+            ["AWS/Lambda", "Duration", "FunctionName", aws_lambda_function.file_processor.function_name]
+          ]
+          period = 300
+          stat   = "Sum"
+          region = var.region
+          title  = "Lambda Function Metrics"
+        }
+      }
+    ]
+  })
+}
+
+## 7c. CloudWatch Alarms
+resource "aws_cloudwatch_metric_alarm" "lambda_error_alarm" {
+  alarm_name          = "LambdaErrorAlarm-${var.environment}"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "Errors"
+  namespace           = "AWS/Lambda"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = 1
+  alarm_description   = "Triggers when Lambda errors ≥ 1"
+  alarm_actions       = [aws_sns_topic.lambda_alarms.arn]
+  dimensions = {
+    FunctionName = aws_lambda_function.file_processor.function_name
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "lambda_high_duration_alarm" {
+  alarm_name          = "LambdaHighDurationAlarm-${var.environment}"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  metric_name         = "Duration"
+  namespace           = "AWS/Lambda"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 1000 # 1 second in milliseconds
+  alarm_description   = "Triggers when Lambda average duration exceeds 1 second"
+  alarm_actions       = [aws_sns_topic.lambda_alarms.arn]
+  dimensions = {
+    FunctionName = aws_lambda_function.file_processor.function_name
+  }
+}
 
