@@ -35,7 +35,7 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
 
 # 3. Lambda Function
 resource "aws_lambda_function" "file_processor" {
-  function_name    = var.lambda_function_name
+  function_name = "file_processor_${random_id.suffix.hex}"
   filename         = "${path.module}/../lambda_function.zip"
   handler          = "lambda_function.lambda_handler"
   runtime          = "python3.9"

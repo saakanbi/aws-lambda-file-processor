@@ -5,5 +5,5 @@ variable "region" {
 
 variable "lambda_function_name" {
   type    = string
-  default = "file_processor_${random_id.suffix.hex}"
+  default = "file_processor"
 }
