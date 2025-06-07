@@ -11,6 +11,9 @@ resource "random_id" "suffix" {
 resource "aws_s3_bucket" "upload_bucket" {
   bucket        = "project-upload-bucket-dev-saakanbi"
   force_destroy = true
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 
