@@ -7,3 +7,7 @@ variable "lambda_function_name" {
   type    = string
   default = "file_processor"
 }
+
+variable "env" {
+  default = "dev"
+}

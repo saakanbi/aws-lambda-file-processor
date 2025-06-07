@@ -9,7 +9,7 @@ resource "random_id" "suffix" {
 
 # 1. S3 Bucket
 resource "aws_s3_bucket" "upload_bucket" {
-  bucket        = "project-upload-bucket-${random_id.suffix.hex}"
+  bucket = "project-upload-bucket-${var.env}"
   force_destroy = true
 }
 
