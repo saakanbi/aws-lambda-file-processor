@@ -44,6 +44,24 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+resource "aws_iam_policy" "lambda_s3_policy" {
+  name        = "lambda_s3_policy_${random_id.suffix.hex}"
+  description = "Allow Lambda to read from S3"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect   = "Allow",
+      Action   = ["s3:GetObject"],
+      Resource = ["${aws_s3_bucket.upload_bucket.arn}/*"]
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_s3" {
+  role       = aws_iam_role.lambda_exec_role.name
+  policy_arn = aws_iam_policy.lambda_s3_policy.arn
+}
+
 # 3. Lambda Function
 resource "aws_lambda_function" "file_processor" {
   function_name = "file_processor_${random_id.suffix.hex}"
